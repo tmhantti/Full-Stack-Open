@@ -1,0 +1,4 @@
+node_module
+mongo-init/mongo-init.js
+mongo_data
+redis_data

@@ -1,0 +1,16 @@
+docker volume ls
+docker exec -it todo-backend-redis-1 bash
+redis-cli
+KEYS *
+GET added_todos
+SET added_todos 9001
+# Postmanin kanssa kikkailua välissä... 
+# (lopulta huomasin vaihtaa bodyn tyypin JSON:ksi)
+# tarkastetaan vielä täältä selaimen lisäksi 
+GET added_todos
+DEL added_todos
+# lisätään Postman:illa yksi todo-item...
+GET added_todos
+# laskurin arvo on nyt yksi
+EXIT
+exit

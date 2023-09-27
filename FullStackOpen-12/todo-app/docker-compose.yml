@@ -1,0 +1,73 @@
+services:
+  # ----------------------------------------------------------------------------------------------------------------------------------------  
+  app:  
+    image: app
+    build:
+      context: ./todo-frontend   # Adjusted build context
+      dockerfile: Dockerfile # This will simply tell which dockerfile to read
+    volumes:
+      - ./todo-frontend/:/usr/src/app 
+      - /usr/src/app/node_modules
+    container_name: todo-front # This will name the container
+    environment:
+      - REACT_APP_BACKEND_URL= http://localhost:8080/api
+      
+      # - REACT_APP_WS_URL= http://localhost:3000
+      # - REACT_APP_WS_URL= http://localhost:8080/ws
+      # - REACT_APP_WS_URL= ws://localhost:8080/api
+      # - REACT_APP_WS_URL= ws://localhost:3000/api
+      - WDS_SOCKET_HOST=127.0.0.1
+      - WDS_SOCKET_PORT=0      
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+
+    # container_name: app # This will name the container    
+  # ----------------------------------------------------------------------------------------------------------------------------------------
+  server:                    # The name of the service, can be anything
+    image: todo-backend       # Declares which image to use
+    build:
+      context: ./todo-backend     # Adjusted build context
+      dockerfile: Dockerfile  # This will simply tell which dockerfile to read    
+    volumes:
+      - ./todo-backend/:/usr/src/app
+      - /usr/src/app/node_modules
+    environment: 
+      - REDIS_URL=redis://redis:6379 
+      - MONGO_URL=mongodb://the_username:the_password@mongo:27017/the_database
+    container_name: todo-back # This will name the container      
+  # ----------------------------------------------------------------------------------------------------------------------------------------
+  mongo:
+    image: mongo
+    ports:
+      # - 3456:27017
+      - 27017:27017
+    expose:
+      - "27017"      
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: the_database
+    volumes: 
+      - ./todo-backend/mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./mongo_data:/data/db
+  # ----------------------------------------------------------------------------------------------------------------------------------------
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    # uncomment following two lines to preserve redis data:
+    command: ['redis-server', '--appendonly', 'yes'] # Overwrite the CMD
+    volumes: # Declare the volume
+      - ./redis_data:/data   
+  # ----------------------------------------------------------------------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.20.1
+    volumes:
+    - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 8080:80
+    container_name: reverse-proxy
+    depends_on:
+      # - mongo # wait for DB to be started
+      - app # wait for the frontend container to be started
+      - server # wait for the backend container to be started
